@@ -1,7 +1,8 @@
 ---
 title: "White and Red Wine EDA by Mithil Viradia"
 output:
-  html_document: default
+  html_document: 
+    keep_md: true
   pdf_document: default
 ---
 ```{r, message=FALSE, warning=FALSE}
