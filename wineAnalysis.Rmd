@@ -1,0 +1,288 @@
+---
+title: "White and Red Wine EDA by Mithil Viradia"
+output:
+  html_document: 
+    keep_md: yes
+    theme: spacelab
+  pdf_document: default
+  word_document: default
+---
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(GGally)
+
+
+wineWhite = read.csv('wineQuality-White.csv',sep = ';')
+wineRed = read.csv('wineQuality-red.csv', sep = ';')
+
+#made a new categorical variable, color
+wineWhite['color'] = 'white'
+wineRed['color'] = 'red'
+
+#combine both the White wind and Red wine datasets
+df = rbind(wineRed,wineWhite)
+
+#set the ggplot grid style
+my_style = theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank())
+
+```
+
+http://winefolly.com/review/sugar-in-wine-chart/
+
+http://www.winespectator.com/drvinny/show/id/5035
+
+
+# About the Data Set
+Both of the data sets have the same variables
+
+- Fixed Acidity(g/dm^3) - measure of tartic acid, having low acidity will result in a flat taste whereas too much will result in tartness. So, the plot for quailty vs Fixed Acidity should be  a bell curve.
+
+- Volatile Acidity(g/dm^3) - meaure of acetic acid, produced through microbial action so too much will lead to spoilage. Wine makers try to make supress volatile acidity as much as they can.
+
+- Citric Acid(g/dm^3) - small amounts lead to nice tangy, and fresh taste. 
+
+- Residual Sugar(g/dm^3) - amount of sugar left, <6 g/dm^3 will lead to a dry taste and >21 g/dm^3 will lead to a sweet taste
+
+- Chlorides(g/dm^3) - salt in wine
+
+- Free Sulfur Dioxide(mg/dm^3) - prevents microbial growth/oxidation, I think that Votatile Acidity and Free Sulfur Dioxide will have an inverse realtionship beacuse since volatile acidity is produced through microbes and SO2 prevents microbial activity
+
+- Total Sulfur Dioxide(mg/dm^3) - amount of free and bound SO2
+
+- Density(g/cm^3) - %sugar to %alcohol, high sugar leads to higher density, high alcohol leads to lower density
+
+- pH(1-14) - used to measure ripeness to acidity, most wines will have a pH from 3 to 4. So, the best whites will have pH(3-3.4) whereas best reds will have pH(3.3-3.6). Low pH will lead to a tart taste while high pH will lead to a bacterial growth.
+
+- Sulphates(g/dm^3) - acts as a microbial deterrent
+
+- Alcohol(% by volume) - % alcohol, measure of how much the fermentation has completed
+
+- Quality(0-10) - the output, wine tasters gave a score of 0 - 10
+
+```{r}
+dim(df)
+```
+
+```{r}
+summary(df)
+```
+# Observations from the Summary
+- Residual Sugar has a huge outlier. The 3rd quantile is at 8.1 while the max is at 65.8. I think it can be split into groups of sweetness. 
+- pH has a small range. All of it is contained withn 2.720 and 4.010. 
+- Quality has 50% of its data withn 5 and 6 so it should look a nice bell curve. 
+- Sulphates, Total SO2, Free SO2, Fixed acidity, Volatile acidity, and Citric acidity have maxes which are atleast double the 3rd quantile. 
+
+
+# Single Variable Analysis 
+
+Lets look at the frequenct of single variables
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(x= quality, fill = color), data = df) + geom_histogram(colour= 'black', position = position_dodge()) + scale_x_continuous(breaks = seq(3,9,1)) + my_style 
+
+```
+- Most of the data comes from White wines. Also, the values of quality are mainly 5,6, or 7. The plot looks like a normal curve.
+
+```{r}
+by(df$pH, df$color, summary)
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(aes(x = pH), data = df) + geom_histogram(colour = 'black', fill = I('#8F738F')) + facet_wrap(~color) + scale_x_continuous(breaks = seq(min(df$pH), max(df$pH),.3)) + my_style
+
+```
+
+- pH has a normal curve look to it. For the reds, most of the data is between 3.2 and 3.4. For the whites, most of the data is between 3.09 and 3.28.
+
+```{r}
+by(df$density, df$color, summary)
+```
+
+
+```{r,message=FALSE, warning=FALSE}
+ggplot(aes(x = density, fill = color), data = df) + geom_histogram(colour = 'black') + scale_x_continuous(lim = c(.985,1.004)) + facet_wrap(~color) + my_style
+```
+
+- From this plot, it can seen that most of the density values are lower than 1. This means that most of the wine was fermented because higher % alcohol leads to lower density. I chose not to include the outliers because they made the distribution of data not as clear. I can be seen that the density for the red wine looks to have a normal curve distribution.
+
+```{r,message=FALSE, warning=FALSE}
+ggplot(aes(x = chlorides, fill = color), data = df) + geom_histogram(colour = 'black') + scale_x_log10(lim = c(min(df$chlorides),.2)) + facet_wrap(~color) + my_style
+```
+
+- Here it can be seen that both of the plots have a nice unimodal distribution. This is because I transformed the x-axis to log10 scale otherwise the two plots had an unclear distribution pattern. 
+
+
+```{r,message=FALSE, warning=FALSE}
+ggplot(aes(x = free.sulfur.dioxide, fill = color), data = df) + geom_histogram(colour = 'black') + facet_wrap(~color) + scale_x_sqrt(lim = c(min(df$free.sulfur.dioxide),100)) + my_style
+
+```
+
+- The red wines have a right skewed plot whereas the white wines have a left skewed plot. I transformed the sacle to sqrt beacuse the distribution is most clear on this scale. 
+
+
+
+### What are the main features of interest in your dataset?
+
+PH, density, and acid levels will the most effect on quailty. I also suspect that sulphates and volatile acidity are most likely realated.
+
+### What other features do you think will help in your investigation?
+
+Any measurement of sulfur and acid levels will be really important in building a predictive model for quailty.
+
+### Did you make any new variables?
+
+I used the categorical variable 'color' to analyze other variable differences between red and white wine.  
+
+### Was there anything strange about any of the features you investigated? 
+
+Sqrt and log10 transformations for chlorides and free SO2 was a bit strange. Maybe, those transformations will play a role in the predective model.
+
+# Bivariate and Multivariate Anaylsis
+
+```{r,message=FALSE, warning=FALSE}
+library(GGally)
+ggcorr(df, label = TRUE, label_round = 2, label_size = 3, layout.exp = 3, hjust = .84) + my_style ##remove the X or id variable
+
+```
+
+### Observations about the Correlation Matrix
+
+- Total sulfur dioxide and free sulfur dioxide has the highest correlation magnitude with .72
+- As I stated earlier, votatile acidity and free/total sulfur dioxide have an inverse realtionship with magnitude -.35 and -.41, respectively
+- Alcohol, density, and volatile acidity have the most impact on quality 
+- Density is highly tied to alcohol and residual sugars which supports the data despriction
+- It is odd that free/total sulfur dioxide has a negative realtionship with sulphates
+- The matrix suggests pH doesn't have a high impact on quality but the data is mostly centered around 3 and 4 so its difficult to tell which pH level will have an impact
+* I belive that this matrix plot is sufficent enough to explain what is going on at the two dimensional level
+
+
+
+```{r,message=FALSE, warning=FALSE}
+ggplot(aes(x = density, y = alcohol, color = quality), data = df) + geom_point() + scale_x_continuous(limits = c(.98,1.02)) + my_style
+```
+
+- This plot compares desnity with alcohol based on quality. It is hard to distiguish a pattern from this plot. This means that the qulity factor needs to be narrowed down so we can if there is a pattern. 
+
+
+```{r}
+df$rating[5< df$quality & df$quality < 7] = 'Ok'
+df$rating[5 >= df$quality] = 'Bad'
+df$rating[df$quality >= 7] = 'Fantastic'
+
+df$ratingsep[5>= df$quality] = 'Bad'
+df$ratingsep[df$quality >= 7] = 'Fantastic'
+
+ggplot(aes(x = rating, fill = color), data = df) + geom_bar(colour = 'black') + my_style
+
+
+```
+
+
+- I made a new variable that split the wine quality into 3 catagories(Bad, Good, and Fantastic). This will help narrow the quality variable, make it easier to anaylze data with several variables, and better predict quality. 
+
+```{r}
+ggplot(aes(y = alcohol, x  = density, color = rating), data = subset(df, rating %in% c('Bad' , 'Fantastic'))) + geom_point() + scale_x_continuous(limits = c(.98,1.005))  + scale_y_continuous(breaks = seq(8,14,1)) + my_style ##made limit .98 to 1.005 beacuse that is where most of the data is centered
+```
+
+- Again, this plot compares dessity with alcohol based on rating. The pattern here is very clear. If alcohol below 11, then for the most part it will be 'bad' wine. If it is above 11, then chances are that it will be 'fantastic'. There doesn't seem to be a pattern to the 'ok' wine, it's just sort of all over the place.
+
+```{r}
+ggplot(aes(y = volatile.acidity, x = chlorides, color = rating), data = subset(df, rating %in% c('Bad' , 'Fantastic')))+ geom_point() + scale_x_log10() + facet_wrap(~color) + my_style
+```
+
+- This is a plot of Volatile acidity with chlorides based on ratings and seprated by wine color. I made it log10 scale beacuse it seemed to seprate better with that scale as compared to sqrt or countinous. For red wines, there isn't much of a pattern. However, white wines seprate about evenly at chloride levels of about 1.04. Its easier to see this split between 'Bad' and 'Fantastic' wines beacuse the 'ok' wines were not included. 
+
+```{r}
+ggplot(aes(x = rating, y = citric.acid, fill = color), data = df) + geom_boxplot() + facet_wrap(~color) + my_style
+
+```
+
+- This plot shows citric acid levels for diffrent ratings seprated by wine color. White wines have about the same median and iqr for citric acid. Whereas, with the red wines, it is obvious to see that citric acid levels seprate 'Bad' and 'Fantastic' wine very clearly.
+
+```{r,message=FALSE, warning=FALSE}
+ggplot(aes(x = free.sulfur.dioxide, y = total.sulfur.dioxide, color = rating), data = df) + geom_smooth(se = FALSE) + scale_x_continuous(breaks = seq(0,300, 50)) + scale_y_continuous(breaks = seq(0,400,50)) + my_style
+```
+
+- Based on this line plot, there is clear area where wine is bad. 'Fantastic' wine is at the lower left of the plot while bad wine countines well past the maximums of 'Good' and 'Fantastic' wine. If free SO2 level is above 115 and fixed SO2 level is above 190, then it is a bad wine. 
+
+
+### Modeling and Predicting
+
+```{r}
+model1 = lm(df$quality ~ df$alcohol + df$density + df$fixed.acidity + df$chlorides + df$volatile.acidity + df$citric.acid + df$residual.sugar + df$pH + df$sulphates)
+
+summary(model1)
+
+
+```
+- This is a really bad model with only 28% accuracy. This is mostly due to the fact that most of the 'quality' data was centered around 5,6, and 7. That is why the model should instead try to predict 'rating' rather than 'quality'.    
+
+```{r}
+library(rpart)
+set.seed(124)
+samp1 = sample(nrow(df), .6 * nrow(df))
+train = df[samp1,]
+test = df[-samp1,]
+
+m2 = rpart(rating ~.-quality, data = train)
+
+summary(m2)
+
+
+```
+```{r}
+library(rpart.plot)
+rpart.plot(m2)
+```
+
+```{r}
+m2predict = predict(m2,test, type = 'class')
+table(predicted = m2predict, actual = test$rating)
+```
+```{r}
+(560 + 80 + 768)/nrow(test)
+```
+
+### Relationships Observed
+- According to the correlation matrix and the decision tree model, alcohol has the highest impact on rating. Density, volatile.acidity, and chlorides follow after. There were some intresting relationships between factors besides the quality and rating factors. Such as the relationships of, fixed SO2 and total SO2, density and alcohol, total SO2 and volatile.acidity.  Most of these were observed beacause that is just how wine chemistry works.
+
+### Suprising/Interesting Relationships
+- The line plot where SO2 levels are compared for each 'rating' of wine was intresting. It showed that it was really easy to classify bad wine once SO2 levels exceed those levels. Also, the scaterplot for alcohol vs density based on 'rating' showed it was really easy to decide between 'Fantastic' wine and 'Bad' wine.
+
+### Models
+- The first model made was a multiple regression model which had an accuracy of ~28%. The second model which used decision trees to classify 'rating' had an accuracy of ~54%. The two models are uncomparable because they predicted two diffrent labels. The bad accuracy can be explained due to the fact that the majority of the 'quality' values were either 5,6 or 7. It could also be that I haven't caibrated the model well enough or that an entirely diffrent model should be used. 
+
+## Final Plots and Summary
+#### Plot 1
+```{r,message=FALSE, warning=FALSE}
+ggplot(aes(x= quality, fill = color), data = df) + geom_histogram(colour= 'black', position = position_dodge()) + scale_x_continuous(breaks = seq(3,9,1)) + ggtitle('Quality count separated by wine color') + my_style
+```
+
+- This histogram represents why it was so hard to predict 'quality' and 'rating'. Most of the data falls between 5,6 and 7. If  there were more values for lower end and upper end of the scale, I belive it would be easier to predict 'rating. Also, there are a lot more white wines than red. Which leads to the second point, for a lot of the factors, there wasn't enough variabilty or range to really distinguish what made sense. 
+
+
+#### Plot 2
+```{r, message=FALSE, warning=FALSE}
+ggcorr(df[,2:14], label = TRUE, label_round = 2, label_size = 4, hjust = .83, layout.exp = 3) + ggtitle('Correlation Matrix') + my_style ##remove the X or id variable
+
+```
+
+- This matrix shows the correlation coefficent for all the variables. It does all of the bivariate analysis in one plot. It can clearly be seen that quality is most impacted by alcohol. Also, alot of other neat realtionships can be seen just from this plot. It makes it really easy to get a nice picture of all the relationships.
+
+
+#### Plot 3
+```{r,message=FALSE, warning=FALSE}
+library(gridExtra)
+p1 = ggplot(aes(y = alcohol, x  = density, color = rating), data = subset(df, rating %in% c('Bad' , 'Fantastic'))) + geom_point() + scale_x_continuous(limits = c(.98,1.005))  + scale_y_continuous(breaks = seq(8,14,1)) + my_style ##made limit .98 to 1.005 beacuse that is where most of the data is centered
+
+p2 = ggplot(aes(y = alcohol, x  = density, color = rating), data = df) + geom_point() + scale_x_continuous(limits = c(.98,1.005))  + scale_y_continuous(breaks = seq(8,14,1)) + my_style ##made limit .98 to 1.005 beacuse that is where most of the data is centered
+
+grid.arrange(p1,p2, ncol = 2)
+
+```
+
+- This plot has two great things about. One, it clearly shows what alcohol level separates 'Bad' win from the 'Fantastic' wine. Two, it shows just how messy the 'Ok' rating makes the plot. The 'Ok' rating is just a range of quality between 5 and 7. Again, that range for quality messes up anaylsis for the dataset.   
+
+## Reflection
+- This project was really fun. I learned alot about R and wine. There were many relationships between the variables and some were stronger than others. From the matrix and the model, the strongest relationships could be obtained. The hard part of this project was that, it was really difficult to pinpoint a concrete way to predict wine 'rating'. Two things limit this, one I have limited knowlege of organic chemistry and two there weren't enough diffrent variables in the dataset. In the future, the dataset could include the wine company, soil quality, or climate of the area. 
